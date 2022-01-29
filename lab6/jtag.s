@@ -95,12 +95,12 @@ READ_PRINT_JTAG_WITH_FILTER:
     movia   r5, NEW_LINE
     call    PRINT_JTAG_WITHOUT_FILTER /* r5 already is '\n' */
 
-END_PUT:
-    /* restore registers */
-    ldw     ra, 8(sp)
-    ldw     r8, 4(sp)
-    ldw     r9, 0(sp)
-    addi    sp, sp, 12
+    END_PUT:
+        /* restore registers */
+        ldw     ra, 8(sp)
+        ldw     r8, 4(sp)
+        ldw     r9, 0(sp)
+        addi    sp, sp, 12
 ret
 
 .data /* data follows */

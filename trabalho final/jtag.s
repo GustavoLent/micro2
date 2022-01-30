@@ -1,19 +1,12 @@
 .text
 .global _start
+
+/* main function */
 _start:
-    movia   sp, 0x007FFFFC /* stack starts from highest memory address in SDRAM */
-    movia   r7, JTAG /* JTAG UART base address */
+    movia   sp, 0x007FFFFC      /* stack starts from highest memory address in SDRAM */
+    movia   r7, JTAG            /* JTAG UART base address */
 
-    /*
-        movi r5, 18
-        call UPDATE_LEDS_STATE
-
-        FIM:
-            br FIM
-    */
-
-    /* set up stack pointer */
-    
+    /* Initial prints */
     movia   r5, TEXT_STRING
     call    PRINT_JTAG_WITHOUT_FILTER
     
@@ -22,17 +15,18 @@ _start:
     
     movia   r5, NEW_LINE
     call    PRINT_JTAG_WITHOUT_FILTER
+    /* Ended initial prints */
 
-    /* read and echo characters */
-    GET_JTAG:
-        ldwio r4, 0(r7) /* read the JTAG UART Data register */
-        andi r8, r4, 0x8000 /* check if there is new data */
+    JTAG_POOLING:
+        ldwio r4, 0(r7)                     /* read the JTAG UART Data register */
+        andi r8, r4, 0x8000                 /* check if there is new data */
         
-        beq r8, r0, GET_JTAG /* if no data, wait */
+        beq r8, r0, JTAG_POOLING            /* if no data, wait */
         
-        andi r5, r4, 0x00ff /* the data is in the least significant byte */
-        call READ_PRINT_JTAG_WITH_FILTER /* echo character */
-    br GET_JTAG
+        andi r5, r4, 0x00ff                 /* the data is in the least significant byte */
+        call PRINT_JTAG_WITH_FILTER    /* echo character */
+    br JTAG_POOLING
+/* end main function */
 
 /* r5 is the string */
 PRINT_JTAG_WITHOUT_FILTER:
@@ -75,11 +69,11 @@ PRINT_JTAG_WITHOUT_FILTER:
 ret
 
 /* r5 is the incomming data */
-GET_NEXT_LED_STATE_BY_INCOMMING_DATA:
+EVALUATE_LED_STATE_BY_INCOMMING_DATA:
     subi    sp, sp, 20
     stw     r8, 16(sp)
     stw     r7, 12(sp)
-    stw     r6, 8(sp) 
+    stw     r6, 8(sp)
     stw     r5, 4(sp)
     stw     ra, 0(sp)
     /* 
@@ -426,42 +420,36 @@ GET_NEXT_LED_STATE_BY_INCOMMING_DATA:
         addi    sp, sp, 20
 ret
 
-/********************************************************************************
-* Subroutine to send a character to the JTAG UART
-* r5 = character to send
-********************************************************************************/
-.global READ_PRINT_JTAG_WITH_FILTER
-READ_PRINT_JTAG_WITH_FILTER:
-    /* save any modified registers */
-    subi    sp, sp, 12          /* reserve space on the stack */
-    stw     ra, 8(sp)           /* save register */
-    stw     r8, 4(sp)           /* save register */
-    stw     r9, 0(sp)           /* save register */
+/* r5 = character to send */
+PRINT_JTAG_WITH_FILTER:
+    subi    sp, sp, 12
+    stw     ra, 8(sp)
+    stw     r8, 4(sp)
+    stw     r9, 0(sp)
 
-    movia   r9, JTAG      /* JTAG UART base address */
+    movia   r9, JTAG                                /* JTAG UART base address */
 
-    ldwio   r8, 4(r9)           /* read the JTAG UART Control register */
-    andhi   r8, r8, 0xffff      /* check for write space */
-    beq     r8, r0, END_PUT     /* if no space, ignore the character */
+    ldwio   r8, 4(r9)                               /* read the JTAG UART Control register */
+    andhi   r8, r8, 0xffff                          /* check for write space */
+    beq     r8, r0, END_PRINT_JTAG_WITH_FILTER      /* if no space, ignore the character */
 
     /* ignoring words */
         movi    r8, 8               /* backspace */
-        beq     r5, r8, END_PUT
+        beq     r5, r8, END_PRINT_JTAG_WITH_FILTER
 
         movi    r8, 127             /* dell */
-        beq     r5, r8, END_PUT
+        beq     r5, r8, END_PRINT_JTAG_WITH_FILTER
     /* end ignoring */
 
-    stwio   r5, 0(r9)           /* print the word */
-    call GET_NEXT_LED_STATE_BY_INCOMMING_DATA
+    stwio   r5, 0(r9)               /* print the word */
+    call EVALUATE_LED_STATE_BY_INCOMMING_DATA
 
     movi    r8, '\n'
-    bne     r5, r8, END_PUT
-    movia   r5, NEW_LINE
-    call    PRINT_JTAG_WITHOUT_FILTER /* r5 already is '\n' */
+    bne     r5, r8, END_PRINT_JTAG_WITH_FILTER
+    movia   r5, NEW_LINE             /* r5 was an '\n', so a new line was printed and this needs a line indicator */
+    call    PRINT_JTAG_WITHOUT_FILTER 
 
-    END_PUT:
-        /* restore registers */
+    END_PRINT_JTAG_WITH_FILTER:
         ldw     ra, 8(sp)
         ldw     r8, 4(sp)
         ldw     r9, 0(sp)

@@ -117,8 +117,7 @@ START_LISTENING_INTERRUPTIONS:
     movi  r10, 1
     wrctl status, r10	# habilita interrupção no processador (PIE)
     
-    ret
-#
+ret
 
 # r4 -> the seconds to await ("integer")
 LOAD_TIMER_INTERRUPTION:
@@ -127,7 +126,7 @@ LOAD_TIMER_INTERRUPTION:
     stw  r10, 4(sp)
     stw  r11, 8(sp)
 
-    # configura TIMER para gerar interrupções de 2 em 2 segundos
+    # configura TIMER para gerar interrupções de r4 em r4 segundos
     movia r9, 50000000
     mul  r10, r9, r4    # r4 segundos
 
@@ -155,8 +154,7 @@ LOAD_TIMER_INTERRUPTION:
     ldw  r11, 8(sp)
     addi sp, sp, 12
 
-    ret
-#
+ret
 
 # r4 -> the button to initialize
 LOAD_PB_INTERRUPTION:
@@ -183,8 +181,7 @@ LOAD_PB_INTERRUPTION:
     ldw  r10, 0(sp)
     addi sp, sp, 8
 
-    ret
-#
+ret
 
 INITIALIZE_LOADED_INTERRUPTIONS:
     addi sp, sp, -4
@@ -197,9 +194,7 @@ INITIALIZE_LOADED_INTERRUPTIONS:
 
     ldw  r9, 0(sp)
     addi sp, sp, 4
-
-    ret
-#
+ret
 
 LOAD_LEDS_FROM_SWITCH:
 	addi sp, sp, -24
@@ -234,8 +229,7 @@ LOAD_LEDS_FROM_SWITCH:
 	ldw   r4, 0(sp)
 	addi sp, sp, 24
 
-    ret
-#
+ret
 
 CALCULATE_SWITCH_SUM:
 	/* 
@@ -284,8 +278,7 @@ CALCULATE_SWITCH_SUM:
 	ldw  r16,  0(sp)
 	addi sp, sp, 20
 
-	ret
-#
+ret
 
 UPDATE_GREEN_LED:
     addi    sp, sp, -12
@@ -303,8 +296,7 @@ UPDATE_GREEN_LED:
 	ldw     r9, 8(sp)
 	addi    sp, sp, 12
 
-    ret
-# 
+ret 
 
 # returns the new state
 TOGGLE_GREEN_LED_STATE:
@@ -326,8 +318,7 @@ TOGGLE_GREEN_LED_STATE:
 	ldw  r10, 8(sp)
 	addi sp, sp, 12
 
-    ret
-# 
+ret 
 
 GREEN_LED_STATE:
 .word 0

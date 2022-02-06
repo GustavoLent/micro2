@@ -139,20 +139,7 @@ _start:
             mov  r5, r11
             call UPDATE_TIMER_DISPLAY       /* Update the timer display */
 
-            movia  r9, ALARM_TRIGGER_VALUE
-            ldw   r9, (r9)                 /* Get the alert trigger value */
-            
-            bne r9, r11, VALIDATE_SECONDS_COUNT_END  /* If the alert trigger value is NOT equal to counted seconds, jump to end  */   
-
-            movia  r9, ALARM_TRIGGERED
-            movi  r11, 1
-            stw   r11, (r9)                 /* As they're equals, update the state of the alarm */
-
-            movia r9, ALARM_STATE
-            stw   r0, (r9)                  /* Initialize the alarm state */
-
-            movia r5, RED_LEDS_ON_MASK
-            call UPDATE_RED_LEDS            /* Turn the red LEDs on */
+            call VALIDATE_IF_ALARM_TRIGGERED
 
             br VALIDATE_SECONDS_COUNT_END
 
@@ -168,6 +155,39 @@ _start:
             ldw     r5, 12(sp)
             ldw     r3, 16(sp)
             addi    sp, sp, 20
+    ret
+
+    VALIDATE_IF_ALARM_TRIGGERED:
+        subi sp, sp, 16
+        stw  ra,   0(sp)
+        stw  r5,   4(sp)
+        stw  r9,   8(sp)
+        stw  r11, 12(sp)
+
+        movia r9, SECONDS_COUNTER
+        ldw   r9, (r9)                      /* Get the counted value */
+
+        movia r11, ALARM_TRIGGER_VALUE
+        ldw   r11, (r11)                    /* Get the alert trigger value */
+
+        bne   r9, r11, VALIDATE_IF_ALARM_TRIGGERED_END  /* If the alert trigger value is NOT equal to counted seconds, jump to end  */   
+
+        movia r9, ALARM_TRIGGERED
+        movi  r11, 1
+        stw   r11, (r9)                     /* As they're equals, update the state of the alarm */
+
+        movia r9, ALARM_STATE
+        stw   r0, (r9)                      /* Initialize the alarm state */
+
+        movia r5, RED_LEDS_ON_MASK
+        call  UPDATE_RED_LEDS               /* Turn the red LEDs on */
+
+        VALIDATE_IF_ALARM_TRIGGERED_END:
+            ldw  ra,   0(sp)
+            ldw  r5,   4(sp)
+            ldw  r9,   8(sp)
+            ldw  r11, 12(sp)
+            addi sp, sp, 16
     ret
 
     ON_TIMER_INTERRUPTION:
@@ -286,6 +306,24 @@ _start:
 
             movi r8, 8
             beq r7, r8, TIMMER_COMMANDS_STATE_08
+
+            movi r8, 9
+            beq r7, r8, TIMMER_COMMANDS_STATE_09
+
+            movi r8, 10
+            beq r7, r8, TIMMER_COMMANDS_STATE_10
+
+            movi r8, 11
+            beq r7, r8, TIMMER_COMMANDS_STATE_11
+
+            movi r8, 12
+            beq r7, r8, TIMMER_COMMANDS_STATE_12
+
+            movi r8, 13
+            beq r7, r8, TIMMER_COMMANDS_STATE_13
+
+            movi r8, 14
+            beq r7, r8, TIMMER_COMMANDS_STATE_14
 
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
@@ -434,15 +472,124 @@ _start:
 
             movia r4, HEX0_0
             mov  r5, r8
-            call UPDATE_TIMER_DISPLAY       /* Update the timer display */
+            call UPDATE_TIMER_DISPLAY                           /* Update the timer display */
 
             movia r8, IS_VALIDATING_TIMER_COMMAND
-            stw   r0, (r8)  /* Store that the timmer commands validation ended. */
+            stw   r0, (r8)                                      /* Store that the timmer commands validation ended. */
+
+            call VALIDATE_IF_ALARM_TRIGGERED
 
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
         TIMMER_COMMANDS_STATE_08:
-            br TIMMER_COMMANDS_STATE_08
+            movi r8, ' '
+            movi r3, ' '    /* 'space' is expected */
+            bne r5, r8, TIMMER_COMMANDS_ERROR_STATE
+            
+            movi r8, 9 /* the next LEDs state is 9, cause "C1 " commes */
+            stw  r8, (r6)
+        br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
+
+        TIMMER_COMMANDS_STATE_09:
+            movi r8, '0'
+            movia r3, DIGIT_TEXT                        /* a Digit is expected */
+            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+
+            movi r8, '9'
+            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+
+            movi r8, 10                                  /* the next state is 10, cause "C1 X" commes */
+            stw  r8, (r6)
+
+            movia r7, ALARM_VALUE_TEMPORARY_DECIMAL_MINUTES
+            subi  r8, r5, '0'                                   /* fix the number value */
+            stw   r8, (r7)                                      /* store the given value as the alert decimal minute value */
+        br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
+
+        TIMMER_COMMANDS_STATE_10:
+            movi r8, '0'
+            movia r3, DIGIT_TEXT                        /* a Digit is expected */
+            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+
+            movi r8, '9'
+            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+
+            movi r8, 11                                  /* the next state is 11, cause "C1 XX" commes */
+            stw  r8, (r6)
+
+            movia r7, ALARM_VALUE_TEMPORARY_UNIT_MINUTES
+            subi  r8, r5, '0'                                   /* fix the number value */
+            stw   r8, (r7)                                      /* store the given value as the alert unit minute value */
+        br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
+
+        TIMMER_COMMANDS_STATE_11:
+            movi r8, '0'
+            movia r3, DIGIT_TEXT                        /* a Digit is expected */
+            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+
+            movi r8, '9'
+            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+
+            movi r8, 12                                  /* the next state is 12, cause "C1 XXY" commes */
+            stw  r8, (r6)
+
+            movia r7, ALARM_VALUE_TEMPORARY_DECIMAL_SECONDS
+            subi  r8, r5, '0'                                   /* fix the number value */
+            stw   r8, (r7)                                      /* store the given value as the alert decimal seconds value */
+        br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
+
+        TIMMER_COMMANDS_STATE_12:
+            movi r8, '0'
+            movia r3, DIGIT_TEXT                        /* a Digit is expected */
+            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+
+            movi r8, '9'
+            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+
+            movi r8, 13                                  /* the next state is 13, cause "C1 XXYY" commes */
+            stw  r8, (r6)
+
+            movia r7, ALARM_VALUE_TEMPORARY_UNIT_SECONDS
+            subi  r8, r5, '0'                                   /* fix the number value */
+            stw   r8, (r7)                                      /* store the given value as the timer unit seconds value */
+        br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
+
+        TIMMER_COMMANDS_STATE_13:
+            movi r8, '\n'
+            movia r3, ENTER_TEXT            /* a "enter" is expected */
+            bne r5, r8, TIMMER_COMMANDS_ERROR_STATE
+
+            movi r8, 0                      /* the next state is 0, cause "C1 XXYY\n" commes */
+            stw  r8, (r6)
+
+            movia r7, ALARM_VALUE_TEMPORARY_UNIT_SECONDS
+            ldw r8, (r7)                                        /* Now, r8 will store the parsed seconds value */
+
+            movia r7, ALARM_VALUE_TEMPORARY_DECIMAL_SECONDS
+            ldw   r7, (r7)
+            muli  r7, r7, 10                                    /* decimal parsing */
+            add r8, r8, r7                                      /* r8 contains the unit and the decimal value from seconds */
+
+            movia r7, ALARM_VALUE_TEMPORARY_UNIT_MINUTES
+            ldw   r7, (r7)
+            muli  r7, r7, 60                                    /* from minutes to seconds */
+            add   r8, r8, r7
+
+            movia r7, ALARM_VALUE_TEMPORARY_DECIMAL_MINUTES
+            ldw   r7, (r7)
+            muli  r7, r7, 10
+            muli  r7, r7, 60
+            add   r8, r8, r7                                    /* r8 contains the unit and the decimal value from seconds and minutes */
+
+            movia r7, ALARM_TRIGGER_VALUE
+            stw   r8, (r7)
+
+            movia r4, HEX0_4
+            mov  r5, r8
+            call UPDATE_TIMER_DISPLAY       /* Update the timer display */
+
+            movia r8, IS_VALIDATING_TIMER_COMMAND
+            stw   r0, (r8)  /* Store that the timmer commands validation ended. */
 
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
@@ -452,6 +599,13 @@ _start:
             bne  r5, r8, TIMMER_COMMANDS_ERROR_STATE
 
             stw r0, (r6)                    /* the next state is 0, cause "C2\n" commes */
+
+            movia r7, ALARM_TRIGGER_VALUE   /* remove the alarm trigger value */
+            stw   r0, (r7)
+
+            movia r7, HEX0_4                /* clear the 8bit display */
+            stwio   r0, (r7)
+
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
         TIMMER_COMMANDS_ERROR_STATE:
@@ -1270,6 +1424,7 @@ _start:
     .equ JTAG,      0x10001000
     .equ TIMER,     0x10002000
     .equ HEX0_0, 0x10000020
+    .equ HEX0_4, 0x10000030
 /*************/
 
 /* masks */
@@ -1320,6 +1475,18 @@ _start:
     .word 0
 
     ALARM_TRIGGER_VALUE:
+    .word 0
+
+    ALARM_VALUE_TEMPORARY_DECIMAL_MINUTES:      /* Temporary value from variable ALARM_TRIGGER_VALUE during the timmer command*/
+    .word 0
+
+    ALARM_VALUE_TEMPORARY_UNIT_MINUTES:         /* Temporary value from variable ALARM_TRIGGER_VALUE during the timmer command*/
+    .word 0
+
+    ALARM_VALUE_TEMPORARY_DECIMAL_SECONDS:      /* Temporary value from variable ALARM_TRIGGER_VALUE during the timmer command*/
+    .word 0
+
+    ALARM_VALUE_TEMPORARY_UNIT_SECONDS:         /* Temporary value from variable ALARM_TRIGGER_VALUE during the timmer command*/
     .word 0
 
     IS_COUNTING_SECONDS:            /* Indica se deve contar os segundos */

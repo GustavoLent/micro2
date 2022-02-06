@@ -14,15 +14,21 @@ RTI:
         addi  ea, ea, -4         # qdo é interrupção (HW), preciso subtrair 4
 
         # preciso saber qual IRQ foi acionada
-        TESTA_TIMER:   
+        VERIFY_PB:
+            movi  r9, ITR_PB           # máscara do IRQ1 (pushbutton)
+            bne   et, r9, VERIFY_TIMER  # caso não seja PB, saio da RTI
+            call  ON_PB_INTERRUPTION
+            br  RTI_END
+
+        VERIFY_TIMER:   
             movi  r9, ITR_TIMER    # máscara do IRQ0 (timer)
-            bne   et, r9, FIM_RTI  # caso não seja timer, saio da RTI
+            bne   et, r9, RTI_END  # caso não seja timer, saio da RTI
             call ON_TIMER_INTERRUPTION
-            br  FIM_RTI
+            br  RTI_END
 
     SW_EXCEPTION:
 
-    FIM_RTI:
+    RTI_END:
         ldw  ra, 0(sp)
         ldw  r9, 4(sp)
         addi sp, sp, 8
@@ -48,6 +54,9 @@ _start:
     movi r4, TIMER_PERIOD_MULTIPLIER
     call LOAD_TIMER_INTERRUPTION
 
+    movi r4, 0b0110
+    call LOAD_PB_INTERRUPTION
+
     call INITIALIZE_LOADED_INTERRUPTIONS
     call START_LISTENING_INTERRUPTIONS 
 
@@ -66,6 +75,82 @@ _start:
         call PRINT_JTAG_WITH_FILTER    /* echo character */
     br JTAG_POOLING
 /* end main function */
+
+/* PushButotn functions */
+    # r4 -> the button to initialize
+    LOAD_PB_INTERRUPTION:
+        addi sp, sp, -8
+        stw  r9, 4(sp)
+        stw  r10, 0(sp)
+
+        movia  r9, PB           # endereço do pushbutton   
+
+        mov   r10, r4 
+        stwio r10, 8(r9)        # habilita interrupção do botão
+
+        movia  r9, ENABLED_INTERRUPTIONS
+        ldw    r9, (r9)
+        movi  r10, ITR_PB
+        or    r10, r10, r9
+
+        movia  r9, ENABLED_INTERRUPTIONS
+        stw    r10, (r9)
+
+        ldw  r9, 4(sp)
+        ldw  r10, 0(sp)
+        addi sp, sp, 8
+    ret
+
+    ON_PB_INTERRUPTION:
+        addi sp, sp, -12
+        stw  ra, 0(sp)
+        stw  r9, 4(sp)
+        stw r10, 8(sp)
+
+        call EXECUTE_PB_ACTION
+
+        movia  r9, PB
+        movi  r10, USED_PBS_MASK
+        stwio r10, 0xC(r9)		# resetando o botão 3
+
+        ldw   ra, 0(sp)
+        ldw   r9, 4(sp)
+        ldw  r10, 8(sp)
+        addi  sp, sp, 12
+    ret
+
+    EXECUTE_PB_ACTION:
+        addi  sp, sp, -12
+        stw   r9, 0(sp)
+        stw  r10, 4(sp)
+        stw  r11, 8(sp)
+
+        movia r9, PB
+        ldwio r10, 0xC(r9)                  # r10 contains the EDGECAPTURE REGISTER from PB
+
+        VALIDATE_PB_1:
+            andi  r11, r10, 0b0010          # get the capture from pb 1
+            beq   r11, r0, VALIDATE_PB_2    # if is equal to 0, try the pb2
+
+            movia r11, IS_COUNTING_SECONDS
+            stw    r0, (r11)
+        br EXECUTE_PB_ACTION_END
+
+        VALIDATE_PB_2:
+            andi  r11, r10, 0b0100      # get the capture from pb 2
+            beq   r11, r0, EXECUTE_PB_ACTION_END
+
+            movia r11, IS_COUNTING_SECONDS
+            movi  r10, 1
+            stw   r10, (r11)
+
+        EXECUTE_PB_ACTION_END:
+            ldw   r9, 0(sp)
+            ldw  r10, 4(sp)
+            ldw  r11, 8(sp)
+            addi  sp, sp, 12
+    ret
+/* ******************** */
 
 /*** Timer functions ***/
     # r4 -> the seconds to await ("integer")
@@ -118,7 +203,7 @@ _start:
             movia r9, IS_COUNTING_SECONDS
             ldw   r9, (r9)
 
-            beq r9, r0, ON_TIMER_INTERRUPTION_END
+            beq r9, r0, VALIDATE_SECONDS_COUNT_END
 
             /* Is counting seconds*/
             movia r9, SECONDS_COUNTER_STATE
@@ -587,6 +672,8 @@ _start:
             movia r4, HEX0_4
             mov  r5, r8
             call UPDATE_TIMER_DISPLAY       /* Update the timer display */
+
+            call VALIDATE_IF_ALARM_TRIGGERED
 
             movia r8, IS_VALIDATING_TIMER_COMMAND
             stw   r0, (r8)  /* Store that the timmer commands validation ended. */
@@ -1418,13 +1505,14 @@ _start:
 /*** ************** ***/
 
 /* addresses */
-    .equ SWITCHES,  0x10000040
     .equ RED_LEDS,      0x10000000
-    .equ GREEN_LEDS,      0x10000010
-    .equ JTAG,      0x10001000
-    .equ TIMER,     0x10002000
-    .equ HEX0_0, 0x10000020
-    .equ HEX0_4, 0x10000030
+    .equ GREEN_LEDS,    0x10000010
+    .equ HEX0_0,        0x10000020
+    .equ HEX0_4,        0x10000030
+    .equ SWITCHES,      0x10000040
+    .equ PB,            0x10000050
+    .equ JTAG,          0x10001000
+    .equ TIMER,         0x10002000
 /*************/
 
 /* masks */
@@ -1432,8 +1520,10 @@ _start:
     .equ ODD_LEDS,  0b101010101
     .equ SWITCHES_LEDS_MASK, 0b111111111
     .equ RED_LEDS_ON_MASK, 0b111111111111111111
+    .equ USED_PBS_MASK, 0b0110
 /*********/
 
+.equ ITR_PB,    0b10    # interuption pushbutton
 .equ ITR_TIMER, 0b1     # interuption timmer
 .equ TIMER_BASE_PERIOD, 25000000        # 500 ms
 .equ TIMER_PERIOD_MULTIPLIER, 1

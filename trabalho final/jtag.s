@@ -51,6 +51,9 @@ _start:
     call INITIALIZE_LOADED_INTERRUPTIONS
     call START_LISTENING_INTERRUPTIONS 
 
+    movia r4, HEX0_0
+    movia r5, SECONDS_COUNTER
+    ldw   r5, (r5)
     call UPDATE_TIMER_DISPLAY
 
     JTAG_POOLING:
@@ -104,11 +107,12 @@ _start:
 
     /* Will validate the seconds count, and will validate if the seconds update triggers the alarm */
     VALIDATE_SECONDS_COUNT:
-        subi    sp, sp, 16
+        subi    sp, sp, 20
         stw     ra,  0(sp)
         stw     r9,  4(sp)
         stw     r11, 8(sp)
         stw     r5, 12(sp)
+        stw     r3, 16(sp)
 
         VALIDATING_IF_IS_COUNTING_SECONDS:
             movia r9, IS_COUNTING_SECONDS
@@ -131,6 +135,8 @@ _start:
             addi  r11, r11, 1               /* Add 1 */
             stw   r11, (r9)                 /* Store the counted value. Now the SECONDS_COUNTER is updated */
 
+            movia r4, HEX0_0
+            mov  r5, r11
             call UPDATE_TIMER_DISPLAY       /* Update the timer display */
 
             movia  r9, ALARM_TRIGGER_VALUE
@@ -160,7 +166,8 @@ _start:
             ldw     r9,  4(sp)
             ldw     r11, 8(sp)
             ldw     r5, 12(sp)
-            addi    sp, sp, 16
+            ldw     r3, 16(sp)
+            addi    sp, sp, 20
     ret
 
     ON_TIMER_INTERRUPTION:
@@ -425,7 +432,9 @@ _start:
             movia r7, SECONDS_COUNTER
             stw   r8, (r7)
 
-            call UPDATE_TIMER_DISPLAY
+            movia r4, HEX0_0
+            mov  r5, r8
+            call UPDATE_TIMER_DISPLAY       /* Update the timer display */
 
             movia r8, IS_VALIDATING_TIMER_COMMAND
             stw   r0, (r8)  /* Store that the timmer commands validation ended. */
@@ -489,118 +498,119 @@ _start:
 /*** *************** ***/
 
 /*** JTAG functions ***/
-/* r5 is the string */
-PRINT_JTAG_WITHOUT_FILTER:
-    subi    sp, sp, 16
-    stw     r10, 12(sp)
-    stw     r9, 8(sp)
-    stw     r8, 4(sp)
-    stw     r5, 0(sp)
+    /* r5 is the string */
+    PRINT_JTAG_WITHOUT_FILTER:
+        subi    sp, sp, 16
+        stw     r10, 12(sp)
+        stw     r9, 8(sp)
+        stw     r8, 4(sp)
+        stw     r5, 0(sp)
 
-    movia   r9, JTAG                    /* JTAG UART base address */
+        movia   r9, JTAG                    /* JTAG UART base address */
 
-    movi r8, 127                        /* 127 is the last ascii code */
-    bgt  r5, r8, WITHOUT_FILTER_LOOP
+        movi r8, 127                        /* 127 is the last ascii code */
+        bgt  r5, r8, WITHOUT_FILTER_LOOP
 
-    stwio   r5, (r9)                    /* if is ascii, just print */
-    br END_WITHOUT_FILTER_LOOP
+        stwio   r5, (r9)                    /* if is ascii, just print */
+        br END_WITHOUT_FILTER_LOOP
 
-    WITHOUT_FILTER_LOOP:
-        ldb     r8, 0(r5)
-        
-        COMPARE_WRITE_VALUE:
-            beq     r8, zero, END_WITHOUT_FILTER_LOOP       /* string is null-terminated */
+        WITHOUT_FILTER_LOOP:
+            ldb     r8, 0(r5)
+            
+            COMPARE_WRITE_VALUE:
+                beq     r8, zero, END_WITHOUT_FILTER_LOOP       /* string is null-terminated */
 
-                ldwio   r10, 4(r9)                          /* read the JTAG UART Control register */
-                andhi   r10, r10, 0xffff                    /* check for write space */
-                beq     r10, r0, COMPARE_WRITE_VALUE        /* if no space, wait */
+                    ldwio   r10, 4(r9)                          /* read the JTAG UART Control register */
+                    andhi   r10, r10, 0xffff                    /* check for write space */
+                    beq     r10, r0, COMPARE_WRITE_VALUE        /* if no space, wait */
 
-                stwio   r8, 0(r9)
+                    stwio   r8, 0(r9)
 
-            addi    r5, r5, 1
-    br WITHOUT_FILTER_LOOP
+                addi    r5, r5, 1
+        br WITHOUT_FILTER_LOOP
 
 
-    END_WITHOUT_FILTER_LOOP:
-        ldw     r10, 12(sp)
-        ldw     r9, 8(sp)
-        ldw     r8, 4(sp)
-        ldw     r5, 0(sp)
-        addi    sp, sp, 16
-ret
+        END_WITHOUT_FILTER_LOOP:
+            ldw     r10, 12(sp)
+            ldw     r9, 8(sp)
+            ldw     r8, 4(sp)
+            ldw     r5, 0(sp)
+            addi    sp, sp, 16
+    ret
 
-/* r5 = character to send */
-PRINT_JTAG_WITH_FILTER:
-    subi    sp, sp, 12
-    stw     ra, 8(sp)
-    stw     r8, 4(sp)
-    stw     r9, 0(sp)
-
-    movia   r9, JTAG                                /* JTAG UART base address */
-
-    ldwio   r8, 4(r9)                               /* read the JTAG UART Control register */
-    andhi   r8, r8, 0xffff                          /* check for write space */
-    beq     r8, r0, END_PRINT_JTAG_WITH_FILTER      /* if no space, ignore the character */
-
-    /* ignoring words */
-        movi    r8, 8               /* backspace */
-        beq     r5, r8, END_PRINT_JTAG_WITH_FILTER
-
-        movi    r8, 127             /* dell */
-        beq     r5, r8, END_PRINT_JTAG_WITH_FILTER
-    /* end ignoring */
-
-    stwio   r5, 0(r9)               /* print the word */
-    call EVALUATE_LED_STATE_BY_INCOMMING_DATA
-    call TIMER_COMMANDS_FINITE_STATE_MACHINE
-
-    movi    r8, '\n'
-    bne     r5, r8, END_PRINT_JTAG_WITH_FILTER
-    movia   r5, NEW_LINE             /* r5 was an '\n', so a new line was printed and this needs a line indicator */
-    call    PRINT_JTAG_WITHOUT_FILTER 
-
-    END_PRINT_JTAG_WITH_FILTER:
-        ldw     ra, 8(sp)
-        ldw     r8, 4(sp)
-        ldw     r9, 0(sp)
-        addi    sp, sp, 12
-ret
-
-/* r3 is the expected, r4 is the obtained */
-PRINT_ERROR:
-    PRINT_ERROR_CREATE_STACK:
+    /* r5 = character to send */
+    PRINT_JTAG_WITH_FILTER:
         subi    sp, sp, 12
         stw     ra, 8(sp)
-        stw     r5, 4(sp)
-        stw     r4, 0(sp)
-        
-    /* if the obtained is '\n', change to 'enter' */
-    movi r8, '\n'
-    bne r4, r8, CONTINUE_PRINT_ERROR
-    movia r4, ENTER_TEXT
+        stw     r8, 4(sp)
+        stw     r9, 0(sp)
 
-    CONTINUE_PRINT_ERROR:
-    movia   r5, EXPECTED
-    call    PRINT_JTAG_WITHOUT_FILTER
+        movia   r9, JTAG                                /* JTAG UART base address */
 
-    mov     r5, r3
-    call    PRINT_JTAG_WITHOUT_FILTER
+        ldwio   r8, 4(r9)                               /* read the JTAG UART Control register */
+        andhi   r8, r8, 0xffff                          /* check for write space */
+        beq     r8, r0, END_PRINT_JTAG_WITH_FILTER      /* if no space, ignore the character */
 
-    movia   r5, OBTAINED
-    call    PRINT_JTAG_WITHOUT_FILTER
+        /* ignoring words */
+            movi    r8, 8               /* backspace */
+            beq     r5, r8, END_PRINT_JTAG_WITH_FILTER
 
-    mov     r5, r4
-    call    PRINT_JTAG_WITHOUT_FILTER
+            movi    r8, 127             /* dell */
+            beq     r5, r8, END_PRINT_JTAG_WITH_FILTER
+        /* end ignoring */
 
-    movia   r5, OBTAINED_END
-    call    PRINT_JTAG_WITHOUT_FILTER
+        stwio   r5, 0(r9)               /* print the word */
+        call EVALUATE_LED_STATE_BY_INCOMMING_DATA
+        call TIMER_COMMANDS_FINITE_STATE_MACHINE
 
-    PRINT_ERROR_RESTORE_STACK:
-        ldw     ra, 8(sp)
-        ldw     r5, 4(sp)
-        ldw     r4, 0(sp)
-        addi    sp, sp, 12
-ret
+        movi    r8, '\n'
+        bne     r5, r8, END_PRINT_JTAG_WITH_FILTER
+        movia   r5, NEW_LINE             /* r5 was an '\n', so a new line was printed and this needs a line indicator */
+        call    PRINT_JTAG_WITHOUT_FILTER 
+
+        END_PRINT_JTAG_WITH_FILTER:
+            ldw     ra, 8(sp)
+            ldw     r8, 4(sp)
+            ldw     r9, 0(sp)
+            addi    sp, sp, 12
+    ret
+
+    /* r3 is the expected, r4 is the obtained */
+    PRINT_ERROR:
+        PRINT_ERROR_CREATE_STACK:
+            subi    sp, sp, 12
+            stw     ra, 8(sp)
+            stw     r5, 4(sp)
+            stw     r4, 0(sp)
+            
+        /* if the obtained is '\n', change to 'enter' */
+        movi r8, '\n'
+        bne r4, r8, CONTINUE_PRINT_ERROR
+        movia r4, ENTER_TEXT
+
+        CONTINUE_PRINT_ERROR:
+        movia   r5, EXPECTED
+        call    PRINT_JTAG_WITHOUT_FILTER
+
+        mov     r5, r3
+        call    PRINT_JTAG_WITHOUT_FILTER
+
+        movia   r5, OBTAINED
+        call    PRINT_JTAG_WITHOUT_FILTER
+
+        mov     r5, r4
+        call    PRINT_JTAG_WITHOUT_FILTER
+
+        movia   r5, OBTAINED_END
+        call    PRINT_JTAG_WITHOUT_FILTER
+
+        PRINT_ERROR_RESTORE_STACK:
+            ldw     ra, 8(sp)
+            ldw     r5, 4(sp)
+            ldw     r4, 0(sp)
+            addi    sp, sp, 12
+    ret
+/*** ************** ***/
 
 /*** green LEDs functions ***/
     /* r5 is the incomming data */
@@ -1129,39 +1139,40 @@ ret
             addi    sp, sp, 4
     ret
 
+    /*  r4 is the display base address
+        r5 is the seconds to display (that will be properly turned to minutes) */
     UPDATE_TIMER_DISPLAY:
         addi  sp, sp, -44
-        stw   r6,  0(sp)
-        stw   r7,  4(sp)
-        stw   r8,  8(sp)
-        stw   r9,  12(sp)
-        stw  r10, 16(sp)
-        stw  r11, 20(sp)
-        stw  r12, 24(sp)
-        stw   ra, 28(sp)
-        stw   r4, 32(sp)
-        stw   r5, 36(sp)
-        stw   r2, 40(sp)
+        stw   ra,  0(sp)
+        stw   r2,  4(sp)
+        stw   r4,  8(sp)
+        stw   r5, 12(sp)
+        stw   r7, 16(sp)
+        stw   r8, 20(sp)
+        stw   r9, 24(sp)
+        stw  r10, 28(sp)
+        stw  r11, 32(sp)
+        stw  r12, 36(sp)
+        stw  r13, 40(sp)
 
-        movia r6, SECONDS_COUNTER
-        ldw r6, (r6)                        # r6 = TOTAL counted time in seconds
+        mov r13, r4                 # store the display base address
 
-        movi r7, 60                         # r7 = from seconds to minutes
-        div r8, r6, r7                      # r8 = counted minutes (to show)
+        movi r7, 60                 # r7 = from seconds to minutes
+        div  r8, r5, r7             # r8 = counted minutes (to show)
 
-        mov r4, r6
-        mov r5, r7
-        call DIV_REMAINDER                  # get the remainder from (TOTAL counted time in seconds / 60 seconds)
-        mov r9, r2                          # r9 = counted seconds (to show)
+        mov  r4, r5
+        mov  r5, r7
+        call DIV_REMAINDER          # get the remainder from (TOTAL counted time in seconds / 60 seconds)
+        mov  r9, r2                 # r9 = counted seconds (to show)
 
-        movi r10, 0         # r10 will contain the mask to show on the display
-        movi r11, 10        # r11 will be used to divide values by 10
+        movi r10, 0                 # r10 will contain the mask to show on the display
+        movi r11, 10                # r11 will be used to divide values by 10
 
         UPDATE_TIMER_DISPLAY_PREPARE_SECONDS:
-            div  r12, r9, r11                      # r12 = decimal value in the counted seconds
+            div  r12, r9, r11                       # r12 = decimal value in the counted seconds
             mov r5, r12
-            call GET_DISPLAY_MASK_FROM_DIGIT       # r2 = the mask to r12
-            slli r2, r2, 8                              # as the second's decimal value must be show in the second display, rotate it by 8
+            call GET_DISPLAY_MASK_FROM_DIGIT        # r2 = the mask to r12
+            slli r2, r2, 8                          # as the second's decimal value must be show in the second display, rotate it by 8
             or   r10, r10, r2
 
             mov r4, r9
@@ -1170,11 +1181,11 @@ ret
 
             mov r5, r2                          # r2 contains the unit value from counted seconds
             call GET_DISPLAY_MASK_FROM_DIGIT
-            or   r10, r10, r2     # as the second's unit value must be show in the first display, dont rotate
-        # here, the seconds mask is ok
+            or   r10, r10, r2                   # as the second's unit value must be show in the first display, dont rotate
+            # here, the seconds mask is ok
         
         UPDATE_TIMER_DISPLAY_PREPARE_MINUTES:
-            div  r12, r8, r11                        # r12 = decimal value in the counted minutes
+            div  r12, r8, r11                       # r12 = decimal value in the counted minutes
             mov r5, r12
             call GET_DISPLAY_MASK_FROM_DIGIT        # r2 = the mask to r12
             slli r2, r2, 24                         # as the minutes's decimal value must be show in the fourth display, rotate it by 24
@@ -1184,26 +1195,25 @@ ret
             mov r5, r11
             call DIV_REMAINDER
 
-            mov r5, r2                          # r2 contains the unit value from counted seconds
+            mov r5, r2                              # r2 contains the unit value from counted seconds
             call GET_DISPLAY_MASK_FROM_DIGIT
             slli r2, r2, 16                         # as the minutes's decimal value must be show in the third display, rotate it by 16
             or   r10, r10, r2
         # here, the minutes mask is ok
         
-        movia r12, HEX0_0	
-        stwio r10, (r12)
+        stwio r10, (r13)
         
-        ldw   r6,  0(sp)
-        ldw   r7,  4(sp)
-        ldw   r8,  8(sp)
-        ldw   r9,  12(sp)
-        ldw  r10,  16(sp)
-        ldw  r11,  20(sp)
-        ldw  r12,  24(sp)
-        ldw   ra,  28(sp)
-        ldw   r4,  32(sp)
-        ldw   r5,  36(sp)
-        ldw   r2, 40(sp)
+        ldw   ra,  0(sp)
+        ldw   r2,  4(sp)
+        ldw   r4,  8(sp)
+        ldw   r5, 12(sp)
+        ldw   r7, 16(sp)
+        ldw   r8, 20(sp)
+        ldw   r9, 24(sp)
+        ldw  r10, 28(sp)
+        ldw  r11, 32(sp)
+        ldw  r12, 36(sp)
+        ldw  r13, 40(sp)
         addi  sp, sp, 44
     ret
 /*** ********************** ***/

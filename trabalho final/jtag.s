@@ -1132,6 +1132,9 @@ _start:
             movia r7, HEX0_4                /* clear the 8bit display */
             stwio   r0, (r7)
 
+            movia r8, IS_VALIDATING_TIMER_COMMAND
+            stw   r0, (r8)                                      /* Store that the timmer commands validation ended. */
+
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
         TIMMER_COMMANDS_ERROR_STATE:

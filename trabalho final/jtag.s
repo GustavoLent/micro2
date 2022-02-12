@@ -1,3 +1,9 @@
+# @author: Gustavo Lima Lent <gustavo.lent@unesp.br>,
+#          Guilherme Cardoso Oliveira <guilherme.cardoso-oliveira@unesp.br>
+# @date  : 2021-01-29
+#
+# Interpretador de comandos para LED e TIMER - Projeto MICROPROCESSADORES II
+
 .org 0x20
 
 RTI:

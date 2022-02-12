@@ -319,6 +319,9 @@ _start:
             movia r7, LEDS_ON_OFF_STATE     
             stw   r8, (r7)                  /* update the LEDS_ON_OFF_STATE */
 
+            movia r8, IS_VALIDATING_LEDS_COMMAND
+            stw   r0, (r8)  /* Store that the leds validation ended. */
+
         br LEDS_END
 
         LEDS_STATE_08:
@@ -339,6 +342,9 @@ _start:
 
             movia r7, LEDS_ON_OFF_STATE
             stw r8, (r7)                    /* update the LEDS_ON_OFF_STATE with the new mask */
+
+            movia r8, IS_VALIDATING_LEDS_COMMAND
+            stw   r0, (r8)  /* Store that the leds validation ended. */
 
         br LEDS_END
 
@@ -361,6 +367,9 @@ _start:
             movia r7, LEDS_ON_OFF_STATE
             stw r8, (r7)                    /* update the LEDS_ON_OFF_STATE with the new mask */
 
+            movia r8, IS_VALIDATING_LEDS_COMMAND
+            stw   r0, (r8)  /* Store that the leds validation ended. */
+
         br LEDS_END
 
         LEDS_STATE_10:
@@ -380,6 +389,9 @@ _start:
             movia r7, LEDS_ON_OFF_STATE
             stw r8, (r7)                    /* update the LEDS_ON_OFF_STATE with the new mask */
 
+            movia r8, IS_VALIDATING_LEDS_COMMAND
+            stw   r0, (r8)  /* Store that the leds validation ended. */
+
         br LEDS_END
 
         LEDS_STATE_11:
@@ -394,6 +406,9 @@ _start:
 
             movia r8, LEDS_ON_OFF_STATE     /* get the LEDS_ON_OFF_STATE address */
             stw   r0, (r8)                  /* update LEDS_ON_OFF_STATE with all disabled */
+
+            movia r8, IS_VALIDATING_LEDS_COMMAND
+            stw   r0, (r8)  /* Store that the leds validation ended. */
 
         br LEDS_END
 

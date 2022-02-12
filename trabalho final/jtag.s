@@ -1,3 +1,9 @@
+# @author: Gustavo Lima Lent <gustavo.lent@unesp.br>,
+#          Guilherme Cardoso Oliveira <guilherme.cardoso-oliveira@unesp.br>
+# @date  : 2021-01-29
+#
+# Interpretador de comandos para LED e TIMER - Projeto MICROPROCESSADORES II
+
 .org 0x20
 
 RTI:
@@ -810,58 +816,58 @@ _start:
         ldw   r8, (r8)
         bne   r8, r0, TIMER_COMMANDS_FINITE_STATE_MACHINE_END /* If the LEDs state is being validated, dont validate any state from Timer Command*/
 
-        TIMMER_COMMANDS_STATE_VALIDATION: 
-            movia r6, TIMMER_COMMANDS_STATE
+        TIMER_COMMANDS_STATE_VALIDATION: 
+            movia r6, TIMER_COMMANDS_STATE
             ldw   r7, (r6)
 
             movi r8, 0
-            beq r7, r8, TIMMER_COMMANDS_STATE_00
+            beq r7, r8, TIMER_COMMANDS_STATE_00
 
             movi r8, 1
-            beq r7, r8, TIMMER_COMMANDS_STATE_01
+            beq r7, r8, TIMER_COMMANDS_STATE_01
 
             movi r8, 2
-            beq r7, r8, TIMMER_COMMANDS_STATE_02
+            beq r7, r8, TIMER_COMMANDS_STATE_02
 
             movi r8, 3
-            beq r7, r8, TIMMER_COMMANDS_STATE_03
+            beq r7, r8, TIMER_COMMANDS_STATE_03
 
             movi r8, 4
-            beq r7, r8, TIMMER_COMMANDS_STATE_04
+            beq r7, r8, TIMER_COMMANDS_STATE_04
 
             movi r8, 5
-            beq r7, r8, TIMMER_COMMANDS_STATE_05
+            beq r7, r8, TIMER_COMMANDS_STATE_05
 
             movi r8, 6
-            beq r7, r8, TIMMER_COMMANDS_STATE_06
+            beq r7, r8, TIMER_COMMANDS_STATE_06
 
             movi r8, 7
-            beq r7, r8, TIMMER_COMMANDS_STATE_07
+            beq r7, r8, TIMER_COMMANDS_STATE_07
 
             movi r8, 8
-            beq r7, r8, TIMMER_COMMANDS_STATE_08
+            beq r7, r8, TIMER_COMMANDS_STATE_08
 
             movi r8, 9
-            beq r7, r8, TIMMER_COMMANDS_STATE_09
+            beq r7, r8, TIMER_COMMANDS_STATE_09
 
             movi r8, 10
-            beq r7, r8, TIMMER_COMMANDS_STATE_10
+            beq r7, r8, TIMER_COMMANDS_STATE_10
 
             movi r8, 11
-            beq r7, r8, TIMMER_COMMANDS_STATE_11
+            beq r7, r8, TIMER_COMMANDS_STATE_11
 
             movi r8, 12
-            beq r7, r8, TIMMER_COMMANDS_STATE_12
+            beq r7, r8, TIMER_COMMANDS_STATE_12
 
             movi r8, 13
-            beq r7, r8, TIMMER_COMMANDS_STATE_13
+            beq r7, r8, TIMER_COMMANDS_STATE_13
 
             movi r8, 14
-            beq r7, r8, TIMMER_COMMANDS_STATE_14
+            beq r7, r8, TIMER_COMMANDS_STATE_14
 
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_00:
+        TIMER_COMMANDS_STATE_00:
             movi r8, 'C'
             bne  r5, r8, TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
@@ -874,128 +880,128 @@ _start:
 
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_01:      /* the error is validated in TIMMER_COMMANDS_STATE_01_2; when validate if comes "C2" */
+        TIMER_COMMANDS_STATE_01:      /* the error is validated in TIMER_COMMANDS_STATE_01_2; when validate if comes "C2" */
             movi r8, '0'
-            bne r5, r8, TIMMER_COMMANDS_STATE_01_1
+            bne r5, r8, TIMER_COMMANDS_STATE_01_1
 
-            movi r8, 2      /* the next Timmer Commands state is 2, cause "C0" commes */
+            movi r8, 2      /* the next Timer Commands state is 2, cause "C0" commes */
             stw  r8, (r6)
             br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-            TIMMER_COMMANDS_STATE_01_1:
+            TIMER_COMMANDS_STATE_01_1:
                 movi r8, '1'
-                bne r5, r8, TIMMER_COMMANDS_STATE_01_2
+                bne r5, r8, TIMER_COMMANDS_STATE_01_2
 
-                movi r8, 8      /* the next Timmer Commands state is 5, cause "C1" commes */
+                movi r8, 8      /* the next Timer Commands state is 5, cause "C1" commes */
                 stw  r8, (r6)
                 br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-            TIMMER_COMMANDS_STATE_01_2:
+            TIMER_COMMANDS_STATE_01_2:
                 movi r8, '2'
                 movia r3, DIGITS_0_TO_2_TEXT    /* a Digit from 0 to 2 is expected */
-                bne r5, r8, TIMMER_COMMANDS_ERROR_STATE
+                bne r5, r8, TIMER_COMMANDS_ERROR_STATE
 
-                movi r8, 14      /* the next Timmer Commands state is 8, cause "C2" commes */
+                movi r8, 14      /* the next Timer Commands state is 8, cause "C2" commes */
                 stw  r8, (r6)
                 br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_02:
+        TIMER_COMMANDS_STATE_02:
             movi r8, ' '
             movi r3, ' '    /* 'space' is expected */
-            bne r5, r8, TIMMER_COMMANDS_ERROR_STATE
+            bne r5, r8, TIMER_COMMANDS_ERROR_STATE
             
             movi r8, 3 /* the next LEDs state is 3, cause "C0 " commes */
             stw  r8, (r6)
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_03:
+        TIMER_COMMANDS_STATE_03:
             movi r8, '0'
             movia r3, DIGIT_TEXT                        /* a Digit is expected */
-            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+            blt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
 
             movi r8, '9'
-            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+            bgt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
 
             movi r8, 4                                  /* the next state is 4, cause "C0 X" commes */
             stw  r8, (r6)
 
-            movia r7, TIMMER_COMMANDS_TEMPORARY_DECIMAL_MINUTES
+            movia r7, TIMER_COMMANDS_TEMPORARY_DECIMAL_MINUTES
             subi  r8, r5, '0'                                   /* fix the number value */
             stw   r8, (r7)                                      /* store the given value as the timer decimal minute value */
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_04:
+        TIMER_COMMANDS_STATE_04:
             movi r8, '0'
             movia r3, DIGIT_TEXT                        /* a Digit is expected */
-            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+            blt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
 
             movi r8, '9'
-            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+            bgt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
 
             movi r8, 5                                  /* the next state is 5, cause "C0 XX" commes */
             stw  r8, (r6)
 
-            movia r7, TIMMER_COMMANDS_TEMPORARY_UNIT_MINUTES
+            movia r7, TIMER_COMMANDS_TEMPORARY_UNIT_MINUTES
             subi  r8, r5, '0'                                   /* fix the number value */
             stw   r8, (r7)                                      /* store the given value as the timer unit minute value */
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_05:
+        TIMER_COMMANDS_STATE_05:
             movi r8, '0'
             movia r3, DIGIT_TEXT                        /* a Digit is expected */
-            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+            blt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
 
             movi r8, '9'
-            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+            bgt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
 
             movi r8, 6                                  /* the next state is 6, cause "C0 XXY" commes */
             stw  r8, (r6)
 
-            movia r7, TIMMER_COMMANDS_TEMPORARY_DECIMAL_SECONDS
+            movia r7, TIMER_COMMANDS_TEMPORARY_DECIMAL_SECONDS
             subi  r8, r5, '0'                                   /* fix the number value */
             stw   r8, (r7)                                      /* store the given value as the timer decimal seconds value */
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_06:
+        TIMER_COMMANDS_STATE_06:
             movi r8, '0'
             movia r3, DIGIT_TEXT                        /* a Digit is expected */
-            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+            blt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
 
             movi r8, '9'
-            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+            bgt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
 
             movi r8, 7                                  /* the next state is 7, cause "C0 XXYY" commes */
             stw  r8, (r6)
 
-            movia r7, TIMMER_COMMANDS_TEMPORARY_UNIT_SECONDS
+            movia r7, TIMER_COMMANDS_TEMPORARY_UNIT_SECONDS
             subi  r8, r5, '0'                                   /* fix the number value */
             stw   r8, (r7)                                      /* store the given value as the timer unit seconds value */
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_07:
+        TIMER_COMMANDS_STATE_07:
             movi r8, '\n'
             movia r3, ENTER_TEXT            /* a "enter" is expected */
-            bne r5, r8, TIMMER_COMMANDS_ERROR_STATE
+            bne r5, r8, TIMER_COMMANDS_ERROR_STATE
 
             movi r8, 0                      /* the next state is 0, cause "C0 XXYY\n" commes */
             stw  r8, (r6)
 
-            movia r7, TIMMER_COMMANDS_TEMPORARY_UNIT_SECONDS
+            movia r7, TIMER_COMMANDS_TEMPORARY_UNIT_SECONDS
             ldw r8, (r7)                                        /* Now, r8 will store the parsed seconds value */
 
-            movia r7, TIMMER_COMMANDS_TEMPORARY_DECIMAL_SECONDS
+            movia r7, TIMER_COMMANDS_TEMPORARY_DECIMAL_SECONDS
             ldw   r7, (r7)
             muli  r7, r7, 10                                    /* decimal parsing */
             add r8, r8, r7                                      /* r8 contains the unit and the decimal value from seconds */
 
-            movia r7, TIMMER_COMMANDS_TEMPORARY_UNIT_MINUTES
+            movia r7, TIMER_COMMANDS_TEMPORARY_UNIT_MINUTES
             ldw   r7, (r7)
             muli  r7, r7, 60                                    /* from minutes to seconds */
             add   r8, r8, r7
 
-            movia r7, TIMMER_COMMANDS_TEMPORARY_DECIMAL_MINUTES
+            movia r7, TIMER_COMMANDS_TEMPORARY_DECIMAL_MINUTES
             ldw   r7, (r7)
             muli  r7, r7, 10
             muli  r7, r7, 60
@@ -1009,28 +1015,28 @@ _start:
             call UPDATE_TIMER_DISPLAY                           /* Update the timer display */
 
             movia r8, IS_VALIDATING_TIMER_COMMAND
-            stw   r0, (r8)                                      /* Store that the timmer commands validation ended. */
+            stw   r0, (r8)                                      /* Store that the timer commands validation ended. */
 
             call VALIDATE_IF_ALARM_TRIGGERED
 
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_08:
+        TIMER_COMMANDS_STATE_08:
             movi r8, ' '
             movi r3, ' '    /* 'space' is expected */
-            bne r5, r8, TIMMER_COMMANDS_ERROR_STATE
+            bne r5, r8, TIMER_COMMANDS_ERROR_STATE
             
             movi r8, 9 /* the next LEDs state is 9, cause "C1 " commes */
             stw  r8, (r6)
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_09:
+        TIMER_COMMANDS_STATE_09:
             movi r8, '0'
             movia r3, DIGIT_TEXT                        /* a Digit is expected */
-            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+            blt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
 
             movi r8, '9'
-            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+            bgt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
 
             movi r8, 10                                  /* the next state is 10, cause "C1 X" commes */
             stw  r8, (r6)
@@ -1040,13 +1046,13 @@ _start:
             stw   r8, (r7)                                      /* store the given value as the alert decimal minute value */
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_10:
+        TIMER_COMMANDS_STATE_10:
             movi r8, '0'
             movia r3, DIGIT_TEXT                        /* a Digit is expected */
-            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+            blt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
 
             movi r8, '9'
-            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+            bgt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
 
             movi r8, 11                                  /* the next state is 11, cause "C1 XX" commes */
             stw  r8, (r6)
@@ -1056,13 +1062,13 @@ _start:
             stw   r8, (r7)                                      /* store the given value as the alert unit minute value */
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_11:
+        TIMER_COMMANDS_STATE_11:
             movi r8, '0'
             movia r3, DIGIT_TEXT                        /* a Digit is expected */
-            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+            blt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
 
             movi r8, '9'
-            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+            bgt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
 
             movi r8, 12                                  /* the next state is 12, cause "C1 XXY" commes */
             stw  r8, (r6)
@@ -1072,13 +1078,13 @@ _start:
             stw   r8, (r7)                                      /* store the given value as the alert decimal seconds value */
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_12:
+        TIMER_COMMANDS_STATE_12:
             movi r8, '0'
             movia r3, DIGIT_TEXT                        /* a Digit is expected */
-            blt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
+            blt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if lower than char 0, error */
 
             movi r8, '9'
-            bgt  r5, r8, TIMMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
+            bgt  r5, r8, TIMER_COMMANDS_ERROR_STATE    /* if greather than char '9', error */
 
             movi r8, 13                                  /* the next state is 13, cause "C1 XXYY" commes */
             stw  r8, (r6)
@@ -1088,10 +1094,10 @@ _start:
             stw   r8, (r7)                                      /* store the given value as the timer unit seconds value */
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_13:
+        TIMER_COMMANDS_STATE_13:
             movi r8, '\n'
             movia r3, ENTER_TEXT            /* a "enter" is expected */
-            bne r5, r8, TIMMER_COMMANDS_ERROR_STATE
+            bne r5, r8, TIMER_COMMANDS_ERROR_STATE
 
             movi r8, 0                      /* the next state is 0, cause "C1 XXYY\n" commes */
             stw  r8, (r6)
@@ -1125,14 +1131,14 @@ _start:
             call VALIDATE_IF_ALARM_TRIGGERED
 
             movia r8, IS_VALIDATING_TIMER_COMMAND
-            stw   r0, (r8)  /* Store that the timmer commands validation ended. */
+            stw   r0, (r8)  /* Store that the timer commands validation ended. */
 
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_STATE_14:
+        TIMER_COMMANDS_STATE_14:
             movi r8, '\n'
             movia r3, ENTER_TEXT    /* a "enter" is expected */
-            bne  r5, r8, TIMMER_COMMANDS_ERROR_STATE
+            bne  r5, r8, TIMER_COMMANDS_ERROR_STATE
 
             stw r0, (r6)                    /* the next state is 0, cause "C2\n" commes */
 
@@ -1143,35 +1149,35 @@ _start:
             stwio   r0, (r7)
 
             movia r8, IS_VALIDATING_TIMER_COMMAND
-            stw   r0, (r8)                                      /* Store that the timmer commands validation ended. */
+            stw   r0, (r8)                                      /* Store that the timer commands validation ended. */
 
         br TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
-        TIMMER_COMMANDS_ERROR_STATE:
+        TIMER_COMMANDS_ERROR_STATE:
             mov r7, r5  /* Save the typed char, it will be replaced when calling other functions!!! */
 
             movia r8, IS_VALIDATING_TIMER_COMMAND
-            stw   r0, (r8)  /* Store that the timmer validation ended. */
+            stw   r0, (r8)  /* Store that the timer validation ended. */
 
             movi r8, '\n'
-            beq  r7, r8, TIMMER_COMMANDS_ERROR_STATE_PRINT_ERROR
+            beq  r7, r8, TIMER_COMMANDS_ERROR_STATE_PRINT_ERROR
 
             mov r5, r8
             call PRINT_JTAG_WITHOUT_FILTER      
             /* The entered text was not an '\n', so the pointer is in the same line. Print '\n' */
             /* Remember: the console prints the char typed, so the '\n' would have been written*/
 
-            TIMMER_COMMANDS_ERROR_STATE_PRINT_ERROR:
+            TIMER_COMMANDS_ERROR_STATE_PRINT_ERROR:
                 mov r4, r7          /* The "print error" r4 is the "obtained data", saved in r7 */
                 call PRINT_ERROR
 
                 movi r5, '\n'
                 call PRINT_JTAG_WITHOUT_FILTER  /* Print '\n' after the error message */
 
-                movia r8, TIMMER_COMMANDS_STATE
-                stw   r0, (r8)                  /* restore the timmer commands state */
+                movia r8, TIMER_COMMANDS_STATE
+                stw   r0, (r8)                  /* restore the timer commands state */
 
-            TIMMER_COMMANDS_ERROR_STATE_NEW_LINE_INDICATOR_VALIDATION:
+            TIMER_COMMANDS_ERROR_STATE_NEW_LINE_INDICATOR_VALIDATION:
                 movi r8, '\n'
                 beq  r7, r8, TIMER_COMMANDS_FINITE_STATE_MACHINE_END
 
@@ -1537,7 +1543,7 @@ _start:
 /*********/
 
 .equ ITR_PB,    0b10    # interuption pushbutton
-.equ ITR_TIMER, 0b1     # interuption timmer
+.equ ITR_TIMER, 0b1     # interuption timer
 .equ TIMER_BASE_PERIOD, 25000000        # 500 ms
 .equ TIMER_PERIOD_MULTIPLIER, 1
 
@@ -1580,16 +1586,16 @@ _start:
     ALARM_TRIGGER_VALUE:
     .word 0
 
-    ALARM_VALUE_TEMPORARY_DECIMAL_MINUTES:      /* Temporary value from variable ALARM_TRIGGER_VALUE during the timmer command*/
+    ALARM_VALUE_TEMPORARY_DECIMAL_MINUTES:      /* Temporary value from variable ALARM_TRIGGER_VALUE during the timer command*/
     .word 0
 
-    ALARM_VALUE_TEMPORARY_UNIT_MINUTES:         /* Temporary value from variable ALARM_TRIGGER_VALUE during the timmer command*/
+    ALARM_VALUE_TEMPORARY_UNIT_MINUTES:         /* Temporary value from variable ALARM_TRIGGER_VALUE during the timer command*/
     .word 0
 
-    ALARM_VALUE_TEMPORARY_DECIMAL_SECONDS:      /* Temporary value from variable ALARM_TRIGGER_VALUE during the timmer command*/
+    ALARM_VALUE_TEMPORARY_DECIMAL_SECONDS:      /* Temporary value from variable ALARM_TRIGGER_VALUE during the timer command*/
     .word 0
 
-    ALARM_VALUE_TEMPORARY_UNIT_SECONDS:         /* Temporary value from variable ALARM_TRIGGER_VALUE during the timmer command*/
+    ALARM_VALUE_TEMPORARY_UNIT_SECONDS:         /* Temporary value from variable ALARM_TRIGGER_VALUE during the timer command*/
     .word 0
 
     IS_COUNTING_SECONDS:            /* Indica se deve contar os segundos */
@@ -1601,19 +1607,19 @@ _start:
     SECONDS_COUNTER_STATE:          /* Estado do contador de segundos (0 ou 1) */
     .word 0
 
-    TIMMER_COMMANDS_STATE:
+    TIMER_COMMANDS_STATE:
     .word 0
 
-    TIMMER_COMMANDS_TEMPORARY_DECIMAL_MINUTES:      /* Temporary value from variable SECONDS_COUNTER during the timmer command*/
+    TIMER_COMMANDS_TEMPORARY_DECIMAL_MINUTES:      /* Temporary value from variable SECONDS_COUNTER during the timer command*/
     .word 0
 
-    TIMMER_COMMANDS_TEMPORARY_UNIT_MINUTES:      /* Temporary value from variable SECONDS_COUNTER during the timmer command*/
+    TIMER_COMMANDS_TEMPORARY_UNIT_MINUTES:      /* Temporary value from variable SECONDS_COUNTER during the timer command*/
     .word 0
 
-    TIMMER_COMMANDS_TEMPORARY_DECIMAL_SECONDS:      /* Temporary value from variable SECONDS_COUNTER during the timmer command*/
+    TIMER_COMMANDS_TEMPORARY_DECIMAL_SECONDS:      /* Temporary value from variable SECONDS_COUNTER during the timer command*/
     .word 0
 
-    TIMMER_COMMANDS_TEMPORARY_UNIT_SECONDS:      /* Temporary value from variable SECONDS_COUNTER during the timmer command*/
+    TIMER_COMMANDS_TEMPORARY_UNIT_SECONDS:      /* Temporary value from variable SECONDS_COUNTER during the timer command*/
     .word 0
 
     IS_VALIDATING_TIMER_COMMAND:

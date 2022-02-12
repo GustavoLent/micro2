@@ -370,14 +370,9 @@ _start:
 
             stw r0, (r6)                    /* the next LEDs state is 0, cause "L4\n" commes */
 
-            movia r7, LEDS_ON_OFF_STATE
-            ldw   r7, (r7)                  /* get the LEDS_ON_OFF_STATE */
-
             movia r8, SWITCHES
             ldwio r8, (r8)                 
             andi  r8, r8, SWITCHES_LEDS_MASK
-
-            or   r8, r8, r7                 /* update the LEDs mask with those that was already on, and the odd LEDs */
 
             movia r7, GREEN_LEDS            /* Green LEDs address */
             stwio r8, (r7)                  /* update the LEDs with the new mask */
